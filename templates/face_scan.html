@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Face Verification | GRW Polytechnic</title>
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap');
+
+body{
+    margin:0;
+    background:#ffffff;
+    font-family:Poppins, sans-serif;
+}
+
+/* ---------------- Header ---------------- */
+.header{
+    width:100%;
+    padding:15px 40px;
+    background:#0d47a1;
+    color:white;
+    display:flex;
+    align-items:center;
+    gap:15px;
+    box-shadow:0px 2px 8px rgba(0,0,0,0.2);
+}
+
+.header img{
+    height:45px;
+}
+
+.header-title{
+    font-size:24px;
+    font-weight:600;
+}
+
+/* ---------------- Main Layout ---------------- */
+.main-area{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    gap:40px;
+    padding:40px;
+    flex-wrap:wrap;
+}
+
+/* ---------------- Video ---------------- */
+video{
+    width:640px;
+    height:480px;
+    border:4px solid #1565c0;
+    border-radius:15px;
+    object-fit:cover;
+    box-shadow:0px 0px 20px rgba(0,0,0,0.2);
+}
+
+/* ---------------- Card ---------------- */
+.card{
+    width:420px;
+    padding:25px;
+    background:white;
+    border-radius:15px;
+    box-shadow:0px 0px 20px rgba(0,0,0,0.1);
+    border-left:5px solid #1565c0;
+}
+
+.card h2{
+    color:#0d47a1;
+    margin-top:0;
+}
+
+/* ---------------- Button ---------------- */
+button.scan{
+    padding:12px 22px;
+    background:#0d47a1;
+    color:white;
+    border:none;
+    border-radius:12px;
+    font-size:16px;
+    font-weight:600;
+    cursor:pointer;
+    transition:0.2s;
+}
+
+button.scan:hover{
+    background:#083574;
+}
+
+.message{
+    margin-top:10px;
+    color:#d32f2f;
+    font-weight:600;
+}
+
+/* ---------------- Loading Spinner ---------------- */
+#spinner{
+    display:none;
+    margin-top:15px;
+    border:5px solid #f3f3f3;
+    border-top:5px solid #0d47a1;
+    border-radius:50%;
+    width:40px;
+    height:40px;
+    animation:spin 1s linear infinite;
+}
+
+@keyframes spin{
+    0%{transform:rotate(0deg);}
+    100%{transform:rotate(360deg);}
+}
+
+/* ---------------- Success Popup ---------------- */
+.popup-success{
+    position:fixed;
+    top:50%;
+    left:50%;
+    transform:translate(-50%,-50%);
+    background:white;
+    padding:40px;
+    border-radius:20px;
+    text-align:center;
+    box-shadow:0 0 25px rgba(0,0,0,0.2);
+    display:none;
+    animation:pop 0.4s ease;
+}
+
+@keyframes pop{
+    0%{transform:translate(-50%,-50%) scale(0.5); opacity:0;}
+    100%{transform:translate(-50%,-50%) scale(1); opacity:1;}
+}
+
+.tick{
+    font-size:60px;
+    color:#28a745;
+}
+
+/* ---------------- Responsive ---------------- */
+@media (max-width:800px){
+    video{
+        width:95%;
+        height:auto;
+    }
+    .card{
+        width:90%;
+    }
+}
+</style>
+
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/GRW_Polytechnic_Logo.png/120px-GRW_Polytechnic_Logo.png">
+    <div class="header-title">GRW Polytechnic – Face Verification</div>
+</div>
+
+<!-- Main Area -->
+<div class="main-area">
+
+    <video id="video" autoplay playsinline></video>
+
+    <div class="card">
+        <h2>Face Verification</h2>
+        <p>Please ensure your face is clearly visible before scanning.</p>
+
+        <button class="scan" id="scanBtn">🔍 Scan Face</button>
+
+        <div id="spinner"></div>
+        <div class="message" id="msg"></div>
+    </div>
+</div>
+
+<!-- Success Popup -->
+<div id="successPopup" class="popup-success">
+    <div class="tick">✔</div>
+    <h3>Face Scanned Successfully!</h3>
+</div>
+
+<script>
+const video = document.getElementById('video');
+const scanBtn = document.getElementById('scanBtn');
+const msg = document.getElementById('msg');
+const spinner = document.getElementById('spinner');
+const successPopup = document.getElementById('successPopup');
+
+// Start webcam
+navigator.mediaDevices.getUserMedia({ video:true })
+.then(stream => video.srcObject = stream)
+.catch(() => msg.innerText = "Camera access denied.");
+
+// Scan button
+scanBtn.addEventListener('click', async () => {
+    msg.innerText = "";
+    spinner.style.display = "block";
+
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth || 640;
+    canvas.height = video.videoHeight || 480;
+    canvas.getContext('2d').drawImage(video, 0, 0);
+
+    canvas.toBlob(async (blob) => {
+
+        const fd = new FormData();
+        fd.append('frame', blob, 'frame.jpg');
+
+        try {
+            const res = await fetch('/face_verify', { method:'POST', body:fd });
+            const text = await res.text();
+
+            spinner.style.display = "none";
+
+            // success popup
+            successPopup.style.display = "block";
+            setTimeout(() => {
+                document.open();
+                document.write(text);
+                document.close();
+            }, 1200);
+
+        } catch (e) {
+            spinner.style.display = "none";
+            msg.innerText = "Error communicating with server.";
+        }
+
+    }, 'image/jpeg', 0.9);
+});
+</script>
+
+</body>
+</html>

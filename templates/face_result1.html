@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Student Detected</title>
+    <style>
+        body { font-family: Arial; background-color:#1e1f2f; color:#fff; text-align:center; padding:20px; }
+        img { border-radius: 10px; margin-top: 20px; width:150px; }
+        h2 { color:#00ffcc; }
+        button { margin:10px; padding:10px 20px; font-size:16px; border:none; border-radius:8px; cursor:pointer; }
+        .entry { background-color:#00ffcc; color:#1e1f2f; }
+        .exit { background-color:#ff6b6b; color:#fff; }
+        button:hover { opacity:0.9; }
+    </style>
+</head>
+<body>
+<h2>Student Recognized</h2>
+<img src="{{ photo }}" alt="Student Photo">
+<p><strong>Enrollment:</strong> {{ enroll }}</p>
+<p><strong>Name:</strong> {{ name }}</p>
+<p><strong>Department:</strong> {{ dept }}</p>
+<p><strong>Year:</strong> {{ year }}</p>
+<p><strong>Phone:</strong> {{ phone }}</p>
+<p><strong>Parent Phone:</strong> {{ parent }}</p>
+
+<form method="POST" action="/entry/{{ enroll }}">
+    <button type="submit" class="entry">Mark Entry</button>
+</form>
+<form method="POST" action="/exit/{{ enroll }}">
+    <button type="submit" class="exit">Mark Exit</button>
+</form>
+</body>
+</html>

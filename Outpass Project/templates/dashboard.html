@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Warden Dashboard</title>
+</head>
+<body>
+<h2>Warden Dashboard - Outpass Requests</h2>
+<table border="1" cellpadding="5">
+<tr>
+  <th>ID</th><th>Enrollment</th><th>Name</th><th>Department</th>
+  <th>Photo</th><th>From</th><th>To</th><th>Reason</th><th>Status</th><th>Action</th>
+</tr>
+{% for r in requests %}
+<tr>
+  <td>{{ r[0] }}</td>
+  <td>{{ r[1] }}</td>
+  <td>{{ r[2] }}</td>
+  <td>{{ r[3] }}</td>
+  <td><img src="/static/IMAGE_DATASET_COTY/{{ r[1] }}.jpg" width="60"></td>
+  <td>{{ r[4] }}</td>
+  <td>{{ r[5] }}</td>
+  <td>{{ r[6] }}</td>
+  <td>{{ r[7] }}</td>
+  <td>
+    {% if r[7] == 'Pending' %}
+      <a href="/update_status/{{ r[0] }}/Approved">Approve</a> |
+      <a href="/update_status/{{ r[0] }}/Rejected">Reject</a>
+    {% else %}-{% endif %}
+  </td>
+</tr>
+{% endfor %}
+</table>
+</body>
+</html>

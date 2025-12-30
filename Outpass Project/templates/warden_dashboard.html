@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Warden Dashboard</title>
+    <style>
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #444; padding: 10px; text-align: center; }
+        th { background: #222; color: white; }
+
+        .btn-approve { background: green; color: white; padding: 5px 10px; border-radius: 5px; text-decoration: none; }
+        .btn-reject { background: red; color: white; padding: 5px 10px; border-radius: 5px; text-decoration: none; }
+    </style>
+</head>
+<body>
+
+<h2>Warden Outpass Requests</h2>
+
+<table>
+    <tr>
+        <th>ID</th>
+        <th>Enrollment</th>
+        <th>Name</th>
+        <th>Reason</th>
+        <th>From</th>
+        <th>To</th>
+        <th>Student Phone</th>
+        <th>Parent Phone</th>
+        <th>Status</th>
+        <th>Action</th>
+    </tr>
+
+    {% for row in data %}
+    <tr>
+        <td>{{ row[0] }}</td>
+        <td>{{ row[1] }}</td>
+        <td>{{ row[2] }}</td>
+        <td>{{ row[3] }}</td>
+        <td>{{ row[4] }}</td>
+        <td>{{ row[5] }}</td>
+        <td>{{ row[6] }}</td>
+        <td>{{ row[7] }}</td>
+        <td><b>{{ row[8] }}</b></td>
+        <td>
+            <a href="/approve/{{ row[0] }}" class="btn-approve">Approve</a>
+            <a href="/reject/{{ row[0] }}" class="btn-reject">Reject</a>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+
+</body>
+</html>

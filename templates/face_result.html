@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Face Match Result | GRW Polytechnic</title>
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap');
+
+body{
+    margin:0;
+    font-family:Poppins;
+    background:#ffffff;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    height:100vh;
+}
+
+/* Main card */
+.card{
+    background:#f7f9fc;
+    padding:30px;
+    width:600px;
+    border-radius:18px;
+    box-shadow:0px 0px 18px rgba(0,0,0,0.15);
+    border-left:6px solid #1565c0;
+    text-align:center;
+}
+
+/* Profile Image */
+img{
+    width:180px;
+    height:200px;
+    object-fit:cover;
+    border-radius:12px;
+    border:4px solid #1565c0;
+    margin-bottom:15px;
+}
+
+/* Text Rows */
+.row{
+    margin:8px 0;
+    font-size:18px;
+    color:#0d47a1;
+}
+
+h2{
+    margin-bottom:10px;
+    font-size:28px;
+    font-weight:700;
+    color:#0d47a1;
+}
+
+/* Buttons */
+button{
+    padding:12px 24px;
+    border:none;
+    border-radius:10px;
+    margin:10px;
+    color:white;
+    font-size:17px;
+    font-weight:700;
+    cursor:pointer;
+}
+
+/* Entry */
+.entry{
+    background:#28a745;
+}
+
+/* Exit */
+.exit{
+    background:#ff4d4d;
+}
+
+/* On hover */
+.entry:hover{
+    background:#1e7e34;
+}
+.exit:hover{
+    background:#cc0000;
+}
+</style>
+</head>
+
+<body>
+
+<div class="card">
+
+    <h2>Face Successfully Matched 🎉</h2>
+
+    <img src="{{ photo }}" alt="Student Photo">
+
+    <div class="row"><b>Enrollment No:</b> {{ enroll }}</div>
+    <div class="row"><b>Name:</b> {{ name }}</div>
+    <div class="row"><b>Department:</b> {{ dept }}</div>
+    <div class="row"><b>Year:</b> {{ year }}</div>
+    <div class="row"><b>Phone:</b> {{ phone }}</div>
+    <div class="row"><b>Parent Phone:</b> {{ parent }}</div>
+
+    <form action="/entry/{{ enroll }}" method="POST" style="display:inline;">
+        <button class="entry">🟢 Mark Entry</button>
+    </form>
+
+    <form action="/exit/{{ enroll }}" method="POST" style="display:inline;">
+        <button class="exit">🔴 Mark Exit</button>
+    </form>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>College Entry/Exit Face Scan</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #1e1f2f;
+            color: #ffffff;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+        }
+        h2 {
+            margin-top: 20px;
+            color: #00ffcc;
+        }
+        #video-container {
+            position: relative;
+            display: inline-block;
+            margin-top: 20px;
+        }
+        video {
+            border-radius: 10px;
+        }
+        #scan-box {
+            position: absolute;
+            top: 50px;
+            left: 50px;
+            width: 300px;
+            height: 200px;
+            border: 4px solid yellow;
+            border-radius: 12px;
+            box-sizing: border-box;
+            transition: border-color 0.3s, border-width 0.3s;
+        }
+        #status {
+            margin-top: 20px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        button {
+            margin-top: 20px;
+            padding: 10px 25px;
+            font-size: 16px;
+            border: none;
+            border-radius: 8px;
+            background-color: #00ffcc;
+            color: #1e1f2f;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #00d9b3;
+        }
+    </style>
+</head>
+<body>
+<h2>College Entry/Exit - Face Scan</h2>
+
+<div id="video-container">
+    <video id="video" width="400" height="300" autoplay></video>
+    <div id="scan-box"></div>
+</div>
+
+<div id="status">📷 Align your face inside the box</div>
+
+<button onclick="capture()">Scan Face</button>
+
+<script>
+const video = document.getElementById('video');
+const status = document.getElementById('status');
+const scanBox = document.getElementById('scan-box');
+
+// Access webcam
+navigator.mediaDevices.getUserMedia({ video: true })
+.then(stream => {
+    video.srcObject = stream;
+})
+.catch(err => {
+    status.textContent = "❌ Cannot access camera";
+});
+
+// Capture function
+function capture() {
+    status.textContent = "⏳ Scanning...";
+    scanBox.style.borderColor = "yellow";
+
+    // Capture current frame
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext('2d').drawImage(video, 0, 0);
+
+    // Convert to Blob (live capture)
+    canvas.toBlob(blob => {
+        const form = new FormData();
+        form.append('frame', blob, 'live_capture.png'); // Always live capture
+
+        fetch('/face_verify', { method: 'POST', body: form })
+        .then(res => res.text())
+        .then(data => {
+            if (data.includes("❌ Fake Image") || data.includes("⚠ Liveness") || data.includes("❌ You Are Not a Member")) {
+                scanBox.style.borderColor = "red";
+                status.textContent = "❌ Face Not Recognized or Spoofed!";
+            } else {
+                scanBox.style.borderColor = "lime";
+                status.textContent = "✅ Face Recognized!";
+            }
+
+            // Show server response (student info or messages)
+            document.body.innerHTML = data;
+        })
+        .catch(err => {
+            console.error(err);
+            status.textContent = "❌ Error scanning face. Try again.";
+        });
+    }, 'image/png');
+}
+
+// Pulsing effect for scan box
+let growing = true;
+setInterval(() => {
+    const width = parseInt(window.getComputedStyle(scanBox).borderWidth);
+    if (growing) {
+        scanBox.style.borderWidth = (width + 1) + 'px';
+        if (width >= 8) growing = false;
+    } else {
+        scanBox.style.borderWidth = (width - 1) + 'px';
+        if (width <= 4) growing = true;
+    }
+}, 100);
+</script>
+</body>
+</html>

@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Student Outpass Form | GRW Polytechnic Tasgaon</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      height: 100vh;
+      background: url("{{ url_for('static', filename='college_bg.jpg') }}") no-repeat center center/cover;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: "Poppins", sans-serif;
+      color: white;
+    }
+
+    /* Overlay */
+    .overlay {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      background: rgba(0, 0, 0, 0.65);
+      backdrop-filter: blur(6px);
+      z-index: 0;
+    }
+
+    /* Main Card */
+    .container {
+      position: relative;
+      z-index: 1;
+      width: 420px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 20px;
+      padding: 30px 40px;
+      box-shadow: 0 0 25px rgba(0, 200, 255, 0.4);
+      animation: fadeIn 2s ease-in-out;
+      backdrop-filter: blur(10px);
+    }
+
+    h2 {
+      text-align: center;
+      font-size: 1.8rem;
+      margin-bottom: 15px;
+      color: #00d4ff;
+      text-shadow: 0 0 15px #00eaff;
+      animation: glow 2s infinite alternate;
+    }
+
+    label {
+      font-weight: bold;
+      margin-top: 10px;
+      display: block;
+    }
+
+    input[type="text"], input[type="date"], textarea {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      border-radius: 8px;
+      border: none;
+      outline: none;
+      font-size: 1rem;
+      background: rgba(255, 255, 255, 0.9);
+      color: #333;
+    }
+
+    textarea {
+      resize: none;
+      height: 70px;
+    }
+
+    img {
+      margin-top: 10px;
+      border-radius: 8px;
+      display: none;
+      width: 120px;
+      border: 2px solid #00c6ff;
+      box-shadow: 0 0 10px #00c6ff;
+    }
+
+    button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 20px;
+      border: none;
+      border-radius: 8px;
+      background: linear-gradient(90deg, #007bff, #00c6ff);
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    button:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 25px #00eaff;
+    }
+
+    .footer {
+      text-align: center;
+      font-size: 0.85rem;
+      margin-top: 20px;
+      color: #ccc;
+    }
+
+    /* Animations */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes glow {
+      from { text-shadow: 0 0 15px #00c6ff; }
+      to { text-shadow: 0 0 30px #00ffff; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="overlay"></div>
+
+<div class="container">
+  <h2>Student Outpass Form</h2>
+  <form method="POST">
+    <label for="enroll">Enrollment No:</label>
+    <input type="text" id="enroll" name="enroll" placeholder="Enter your Enrollment No" required>
+
+    <img id="studentPhoto" alt="Student Photo">
+
+    <label for="from_date">From Date:</label>
+    <input type="date" name="from_date" required>
+
+    <label for="to_date">To Date:</label>
+    <input type="date" name="to_date" required>
+
+    <label for="reason">Reason:</label>
+    <textarea name="reason" placeholder="Enter your reason" required></textarea>
+
+    <button type="submit">Submit Request</button>
+  </form>
+
+  <div class="footer">
+    © 2025 Government Residence Women Polytechnic, Tasgaon
+  </div>
+</div>
+
+<script>
+document.getElementById("enroll").addEventListener("change", function() {
+  let enrollNo = this.value.trim();
+  if (enrollNo) {
+    fetch(`/get_photo/${enrollNo}`)
+      .then(response => response.json())
+      .then(data => {
+        let img = document.getElementById("studentPhoto");
+        if (data.photo) {
+          img.src = data.photo;
+          img.style.display = "block";
+        } else {
+          img.style.display = "none";
+          alert("⚠️ Student photo not found in dataset!");
+        }
+      });
+  }
+});
+</script>
+
+</body>
+</html>

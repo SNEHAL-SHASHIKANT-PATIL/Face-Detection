@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Admin Dashboard</title>
+<style>
+body{
+    font-family:'Segoe UI';
+    background:#f4f6f9;
+    padding:30px;
+}
+.top-bar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:20px;
+}
+h2{
+    color:#0d47a1;
+    margin:0;
+}
+.back-btn{
+    background:#0d47a1;
+    color:white;
+    padding:8px 16px;
+    border-radius:8px;
+    text-decoration:none;
+    font-weight:bold;
+}
+.back-btn:hover{
+    background:#08306b;
+}
+input{
+    padding:12px;
+    border-radius:10px;
+    border:1px solid #ccc;
+    margin-bottom:15px;
+}
+table{
+    width:100%;
+    border-collapse:collapse;
+    background:white;
+    box-shadow:0 5px 20px rgba(0,0,0,0.15);
+}
+th,td{
+    padding:12px;
+    text-align:center;
+}
+th{
+    background:#0d47a1;
+    color:white;
+}
+tr:nth-child(even){
+    background:#f1f5fb;
+}
+a{
+    color:#0d47a1;
+    font-weight:bold;
+    text-decoration:none;
+}
+</style>
+</head>
+<body>
+
+<!-- 🔹 TOP BAR -->
+<div class="top-bar">
+    <a href="/" class="back-btn">⬅ Back to Home</a>
+    <h2>📊 Admin Dashboard</h2>
+</div>
+
+<form method="get" action="/dashboard" style="margin-bottom:15px;">
+
+    <label><b>Select Date:</b></label>
+    <input type="date" name="date" value="{{ selected_date }}">
+
+    <label style="margin-left:20px;"><b>Search Student:</b></label>
+    <input type="text"
+           name="search"
+           placeholder="Enter Name / Enrollment / Phone"
+           value="{{ request.args.get('search','') }}"
+           style="width:420px; height:38px; font-size:16px; padding:6px;">
+
+    <button type="submit" style="height:38px;">Search</button>
+    <a href="/dashboard" style="margin-left:15px;">Clear</a>
+
+</form>
+
+<hr>
+
+<table>
+<tr>
+    <th>Name</th>
+    <th>Dept</th>
+    <th>Year</th>
+    <th>Action</th>
+    <th>Time</th>
+    <th>Status</th>
+    <th>View Info</th>
+
+</tr>
+
+{% for l in logs %}
+<tr>
+    <td>{{l.name}}</td>
+    <td>{{l.department}}</td>
+    <td>{{l.year}}</td>
+    <td>{{l.action}}</td>
+    <td>{{l.timestamp}}</td>
+    <td>{{l.current_status}}</td>
+    <td>
+    <a href="/student/{{ l.enrollment }}" 
+       style="background:#0d47a1;color:white;
+              padding:6px 12px;border-radius:6px;
+              text-decoration:none;">
+        View
+    </a>
+</td>
+
+</tr>
+{% endfor %}
+</table>
+
+</body>
+</html>

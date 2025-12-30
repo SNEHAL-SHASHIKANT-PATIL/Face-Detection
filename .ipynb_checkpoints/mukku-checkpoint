@@ -1,0 +1,262 @@
+# -------------------------------------------------------------
+# app.py (HIGH ACCURACY + ANTI-SPOOF + NOT A MEMBER VERSION)
+# -------------------------------------------------------------
+
+import os, cv2, numpy as np, pandas as pd, sqlite3
+from flask import Flask, render_template, request
+from datetime import datetime
+import mediapipe as mp
+
+app = Flask(__name__)
+
+RAW_FACE_FOLDER = os.path.join('static', 'fixed_faces_cleaned')
+DB_PATH = 'EntryExitData.db'
+DATA_PATH = 'Dataset.csv.xlsx'
+EMB_FILE = 'embeddings_facemesh.npz'
+
+
+# ---------------------------------------------------------
+# 1. Create Database Table
+# ---------------------------------------------------------
+def init_db():
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS GateLogs(
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            enrollment_no TEXT,
+            name TEXT,
+            department TEXT,
+            year TEXT,
+            action TEXT,
+            timestamp TEXT
+        )
+    """)
+    conn.commit()
+    conn.close()
+
+init_db()
+
+
+# ---------------------------------------------------------
+# 2. Load Dataset + Embeddings
+# ---------------------------------------------------------
+df = pd.read_excel(DATA_PATH)
+df.columns = [c.strip().replace(" ", "_").upper() for c in df.columns]
+
+npz = np.load(EMB_FILE, allow_pickle=True)
+known_embeddings = {k: npz[k] for k in npz.files}
+
+
+# ---------------------------------------------------------
+# 3. FaceMesh Model (Improved Accuracy)
+# ---------------------------------------------------------
+mp_face_mesh = mp.solutions.face_mesh
+face_mesh = mp_face_mesh.FaceMesh(
+    static_image_mode=True,
+    max_num_faces=1,
+    refine_landmarks=True,
+    min_detection_confidence=0.90,   
+    min_tracking_confidence=0.90
+)
+
+
+# ---------------------------------------------------------
+# 4. Anti-Spoof Functions
+# ---------------------------------------------------------
+
+# Detect 2D photo (flat surface)
+def is_flat_face(pts):
+    depth_std = np.std(pts[:, 2])
+    return depth_std < 1.1   # more strict = better security
+
+
+LEFT_EYE = [159, 145]
+RIGHT_EYE = [386, 374]
+
+def eye_aspect_ratio(pts):
+    def dist(a, b): return np.linalg.norm(a - b)
+    left = dist(pts[LEFT_EYE[0]], pts[LEFT_EYE[1]])
+    right = dist(pts[RIGHT_EYE[0]], pts[RIGHT_EYE[1]])
+    return (left + right) / 2
+
+
+# ---------------------------------------------------------
+# 5. Extract Face Embedding
+# ---------------------------------------------------------
+def extract_embedding_from_frame(img):
+
+    rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    results = face_mesh.process(rgb)
+
+    if not results.multi_face_landmarks:
+        return None, None, None
+
+    lms = results.multi_face_landmarks[0].landmark
+    h, w, _ = img.shape
+    pts = np.array([[lm.x * w, lm.y * h, lm.z * w] for lm in lms], dtype=np.float32)
+
+    # Anti-spoof: flat 2D face
+    if is_flat_face(pts):
+        return "SPOOF", None, None
+
+    # Anti-spoof: no blinking
+    ear = eye_aspect_ratio(pts)
+    blinked = ear < 3.0
+    if not blinked:
+        return "NO_BLINK", None, None
+
+    # Normalized embedding
+    pts = pts - pts.mean(axis=0)
+    norm = np.linalg.norm(pts)
+    if norm == 0:
+        return None, None, None
+
+    emb = pts.flatten() / norm
+    return emb, pts, results
+
+
+# ---------------------------------------------------------
+# 6. Compare Embedding (Stricter Security)
+# ---------------------------------------------------------
+def match_embedding(emb, threshold=0.90):  # more strict
+    best = None
+    best_sim = -1
+
+    for enroll, ref in known_embeddings.items():
+        sim = np.dot(emb, ref) / (np.linalg.norm(emb) * np.linalg.norm(ref))
+        if sim > best_sim:
+            best_sim = sim
+            best = enroll
+
+    if best_sim >= threshold:
+        return best, best_sim
+
+    return None, best_sim
+
+
+
+# ---------------------------------------------------------
+# 7. ROUTES
+# ---------------------------------------------------------
+@app.route('/')
+def home():
+    return render_template("face_scan.html")
+
+
+
+@app.route('/face_verify', methods=['POST'])
+def face_verify():
+
+    file = request.files.get("frame")
+    if file is None:
+        return "<h3 style='color:red'>No frame received</h3>"
+
+    # Only LIVE camera photos allowed
+    if file.filename.lower().endswith((".jpg", ".png")):
+        return "<h3 style='color:red'>❌ Upload Not Allowed — Use Live Camera!</h3>"
+
+    arr = np.frombuffer(file.read(), np.uint8)
+    img = cv2.imdecode(arr, cv2.IMREAD_COLOR)
+
+    emb, pts, raw = extract_embedding_from_frame(img)
+
+    # anti-spoof messages
+    if emb == "SPOOF":
+        return "<h2 style='color:red'>❌ Fake Image Detected — Use Real Face!</h2>"
+
+    if emb == "NO_BLINK":
+        return "<h2 style='color:#ffcc00'>⚠ Liveness Failed — Please Blink</h2>"
+
+    if emb is None:
+        return "<h3 style='color:#ffd800'>❌ No Face Detected</h3>"
+
+    enroll, sim = match_embedding(emb)
+
+    # -----------------------------
+    # NEW: "YOU ARE NOT A MEMBER"
+    # -----------------------------
+    if enroll is None:
+        return """
+        <h2 style='color:#ff4d4d'>
+            ❌ You Are Not a Member <br>
+            (Face not found in system)
+        </h2>
+        """
+
+    student = df.loc[df["ENROLLMENT_NO"].astype(str) == str(enroll)]
+    if student.empty:
+        return "<h3 style='color:red'>Student Record Missing</h3>"
+
+    rec = student.iloc[0].to_dict()
+    photo_rel = "/" + os.path.join(RAW_FACE_FOLDER, f"{enroll}.jpg").replace("\\", "/")
+
+    return render_template(
+        "face_result.html",
+        enroll=enroll,
+        name=rec.get("NAME", "N/A"),
+        dept=rec.get("DEPARTMENT", "N/A"),
+        year=rec.get("YEAR", "N/A"),
+        phone=rec.get("MOBILE_NO", "N/A"),
+        parent=rec.get("PARENT_MOBILE", "N/A"),
+        photo=photo_rel
+    )
+
+
+
+# ---------------------------------------------------------
+# 8. ENTRY / EXIT Logging
+# ---------------------------------------------------------
+@app.route('/entry/<enroll>', methods=['POST'])
+def mark_entry(enroll):
+    ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    student = df.loc[df["ENROLLMENT_NO"].astype(str) == str(enroll)].iloc[0]
+
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute("""INSERT INTO GateLogs
+        (enrollment_no, name, department, year, action, timestamp)
+        VALUES (?, ?, ?, ?, ?, ?)""",
+              (enroll, student["NAME"], student["DEPARTMENT"],
+               student["YEAR"], "ENTRY", ts))
+    conn.commit()
+    conn.close()
+
+    return render_template(
+        "success.html",
+        action="Entry",
+        name=student["NAME"],
+        enroll=enroll,
+        timestamp=ts
+    )
+
+
+@app.route('/exit/<enroll>', methods=['POST'])
+def mark_exit(enroll):
+    ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    student = df.loc[df["ENROLLMENT_NO"].astype(str) == str(enroll)].iloc[0]
+
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute("""INSERT INTO GateLogs
+        (enrollment_no, name, department, year, action, timestamp)
+        VALUES (?, ?, ?, ?, ?, ?)""",
+              (enroll, student["NAME"], student["DEPARTMENT"],
+               student["YEAR"], "EXIT", ts))
+    conn.commit()
+    conn.close()
+
+    return render_template(
+        "success.html",
+        action="Exit",
+        name=student["NAME"],
+        enroll=enroll,
+        timestamp=ts
+    )
+
+
+# ---------------------------------------------------------
+# MAIN
+# ---------------------------------------------------------
+if __name__ == "__main__":
+    app.run(debug=True)

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Student Info</title>
+<style>
+body{
+    font-family:Segoe UI;
+    background:#f4f6f9;
+    padding:30px;
+}
+.card{
+    background:white;
+    padding:20px;
+    border-radius:12px;
+    max-width:800px;
+    margin:auto;
+}
+img{
+    width:150px;
+    height:150px;
+    object-fit:cover;
+    border-radius:10px;
+    margin:10px;
+}
+</style>
+</head>
+<body>
+
+<div class="card">
+    <h2>👤 Student Details</h2>
+
+    <p><b>Name:</b> {{ name }}</p>
+    <p><b>Department:</b> {{ department }}</p>
+    <p><b>Year:</b> {{ year }}</p>
+
+    <h3>📸 Photos</h3>
+
+    {% for img in images %}
+        <img src="{{ url_for('static', filename='dataset/' + enroll + '/' + img) }}">
+    {% endfor %}
+
+    <br><br>
+    <a href="/dashboard">⬅ Back to Dashboard</a>
+</div>
+
+</body>
+</html>

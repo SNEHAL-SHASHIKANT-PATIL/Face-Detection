@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Add Student</title>
+<style>
+body{
+    font-family:'Segoe UI';
+    background:#f4f6f9;
+    padding:40px;
+}
+.container{
+    max-width:600px;
+    margin:auto;
+    background:white;
+    padding:30px;
+    border-radius:15px;
+    box-shadow:0 5px 20px rgba(0,0,0,0.15);
+}
+input{
+    width:100%;
+    padding:10px;
+    margin:8px 0;
+}
+video,canvas{
+    width:100%;
+    border-radius:10px;
+    margin-top:10px;
+}
+button{
+    background:#0d47a1;
+    color:white;
+    padding:12px;
+    border:none;
+    width:100%;
+    border-radius:8px;
+    font-size:16px;
+    margin-top:10px;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+<h2 align="center">📸 Add Student (Camera)</h2>
+
+<input id="enroll" placeholder="Enrollment Number">
+<input id="name" placeholder="Student Name">
+<input id="dept" placeholder="Department">
+<input id="year" placeholder="Year">
+<input id="phone" placeholder="Phone Number">
+
+<video id="video" autoplay></video>
+<canvas id="canvas" style="display:none;"></canvas>
+
+<button type="button" onclick="capture()">📸 Capture Photo</button>
+<p align="center" id="count">Captured: 0 / 4</p>
+
+<hr>
+
+<h4 align="center">📁 OR Upload Photos</h4>
+
+<input type="file"
+       id="fileInput"
+       multiple
+       accept="image/*"
+       onchange="handleFiles(this.files)">
+<p align="center" id="fileCount">Uploaded: 0 / 4</p>
+
+<button type="button" onclick="saveStudent()">💾 Save Student</button>
+
+</div>
+
+<script>
+let video = document.getElementById("video");
+let canvas = document.getElementById("canvas");
+let ctx = canvas.getContext("2d");
+let images = [];
+
+navigator.mediaDevices.getUserMedia({ video: true })
+.then(stream => {
+    video.srcObject = stream;
+})
+.catch(err => {
+    console.error(err);
+
+    if (err.name === "NotAllowedError") {
+        alert("❌ Camera access denied. Please allow camera permission in browser.");
+    } else if (err.name === "NotFoundError") {
+        alert("❌ No camera device found.");
+    } else {
+        alert("❌ Camera error: " + err.message);
+    }
+});
+
+/* 📸 Capture photo */
+function capture(){
+    if(images.length >= 4){
+        alert("Only 4 photos allowed");
+        return;
+    }
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    ctx.drawImage(video,0,0);
+    images.push(canvas.toDataURL("image/jpeg"));
+    document.getElementById("count").innerText =
+        `Captured: ${images.length} / 4`;
+}
+
+/* 💾 Save student */
+function saveStudent(){
+
+    if(images.length < 4){
+        alert("Capture or upload 4 photos first");
+        return;
+    }
+
+    fetch("/save_student_camera",{
+        method:"POST",
+        headers:{
+            "Content-Type":"application/json"
+        },
+        body:JSON.stringify({
+            enroll: document.getElementById("enroll").value.trim(),
+            name: document.getElementById("name").value.trim(),
+            dept: document.getElementById("dept").value.trim(),
+            year: document.getElementById("year").value.trim(),
+            phone: document.getElementById("phone").value.trim(),
+            images: images
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+
+        // ✅ CORRECT STATUS HANDLING
+        alert(data.msg);
+
+        if(data.status === "success"){
+            window.location.href = "/";
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        alert("❌ Server error while saving student");
+    });
+}
+
+/* 📁 Upload images */
+function handleFiles(files){
+    for(let f of files){
+        if(images.length >= 4) break;
+
+        let reader = new FileReader();
+        reader.onload = e => {
+            images.push(e.target.result);
+            document.getElementById("count").innerText =
+                `Captured: ${images.length} / 4`;
+            document.getElementById("fileCount").innerText =
+                `Uploaded: ${images.length} / 4`;
+        };
+        reader.readAsDataURL(f);
+    }
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Dashboard</title>
+    <style>
+        body { font-family: Arial; background:#1e1f2f; color:#fff; padding:20px; }
+        h2 { color:#00ffcc; text-align:center; }
+        table { width:100%; border-collapse:collapse; margin-top:20px; }
+        th, td { padding:10px; border:1px solid #444; text-align:center; }
+        th { background:#2a2b3d; }
+        tr:nth-child(even){background:#2f303f;}
+        a { color:#00ffcc; text-decoration:none; }
+        a:hover { text-decoration:underline; }
+    </style>
+</head>
+<body>
+<h2>Admin Dashboard - Entry/Exit Logs</h2>
+<p><a href="/admin/logout">Logout</a></p>
+<table>
+    <tr>
+        <th>ID</th>
+        <th>Enrollment</th>
+        <th>Name</th>
+        <th>Department</th>
+        <th>Year</th>
+        <th>Action</th>
+        <th>Timestamp</th>
+    </tr>
+    {% for log in logs %}
+    <tr>
+        <td>{{ log.id }}</td>
+        <td>{{ log.enrollment_no }}</td>
+        <td>{{ log.name }}</td>
+        <td>{{ log.department }}</td>
+        <td>{{ log.year }}</td>
+        <td>{{ log.action }}</td>
+        <td>{{ log.timestamp }}</td>
+    </tr>
+    {% endfor %}
+</table>
+</body>
+</html>
